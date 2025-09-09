@@ -53,4 +53,60 @@ typedef struct __attribute__((packed)) {
 	uint16_t checksum;
 } udp_hdr_t;
 
-int main() { return 0; }
+static int read_fully(FILE *fp, void *buf, size_t sz) {
+	return fread(buf, 1, sz, fp) == sz ? 0 : -1;
+}
+
+// static int is_printable_ascii(uint8_t c) {
+// 	return (c >= 32 && c <= 126) || c == '\n' || c == '\r' || c == '\t';
+// }
+
+static inline uint32_t swap32(uint32_t v) {
+	return ((v & 0x000000FFu) << 24) | ((v & 0x0000FF00u) << 8) |
+	       ((v & 0x00FF0000u) >> 8) | ((v & 0xFF000000u) >> 24);
+}
+
+int main(int argc, char **argv) {
+	if (argc < 2) {
+		fprintf(stderr, "Error: no PCAP file specified. Usage: %s <pcap_file>\n", argv[0]);
+		return 1;
+	}
+
+	const char *pcap_path = argv[1];
+	FILE *fp = fopen(pcap_path, "rb");
+	if (!fp) {
+		fprintf(stderr, "Error: failed to open '%s': %s\n", pcap_path, strerror(errno));
+		return 1;
+	}
+
+	pcap_file_header_t fh;
+	if (read_fully(fp, &fh, sizeof(fh)) != 0) {
+		fprintf(stderr, "Error: failed to read PCAP global header.\n");
+		fclose(fp);
+		return 1;
+	}
+
+	// Detect endianness via magic number
+	uint32_t magic = fh.magic_number;
+	//int swapped = 0;
+	if (magic == 0xa1b2c3d4u) {
+		// native big endian in file; on little-endian hosts we need ntohl semantics below when parsing per-packet lengths
+		//swapped = 0;
+	} else if (magic == 0xd4c3b2a1u) {
+		// byte-swapped
+		//swapped = 1;
+	} else {
+		// also allow nanosecond-resolution magic numbers
+		if (magic == 0xa1b23c4du) {
+			//swapped = 0;
+		} else if (magic == 0x4d3cb2a1u) {
+			//swapped = 1;
+		} else {
+			fprintf(stderr, "Error: unsupported PCAP magic number.\n");
+			fclose(fp);
+			return 1;
+		}
+
+	}
+
+}
