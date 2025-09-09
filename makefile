@@ -1,5 +1,17 @@
-main: main.c 
-	gcc -Wextra -Wall --std c2x $^ -o $@ && ./main data.bin
+CC = gcc
+CFLAGS = --std=c99 -Wall -Wextra -Werror -O2
+LDFLAGS =
 
-clean: 
-	rm main
+TARGET = main
+SRC = main.c
+
+.PHONY: all clean
+
+all: $(TARGET)
+
+$(TARGET): $(SRC)
+	$(CC) $(CFLAGS) $(SRC) -o $(TARGET) $(LDFLAGS)
+
+clean:
+	rm -rf $(TARGET)
+
