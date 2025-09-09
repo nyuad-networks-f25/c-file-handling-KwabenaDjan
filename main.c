@@ -88,19 +88,19 @@ int main(int argc, char **argv) {
 
 	// Detect endianness via magic number
 	uint32_t magic = fh.magic_number;
-	//int swapped = 0;
+	int swapped = 0;
 	if (magic == 0xa1b2c3d4u) {
 		// native big endian in file; on little-endian hosts we need ntohl semantics below when parsing per-packet lengths
-		//swapped = 0;
+		swapped = 0;
 	} else if (magic == 0xd4c3b2a1u) {
 		// byte-swapped
-		//swapped = 1;
+		swapped = 1;
 	} else {
 		// also allow nanosecond-resolution magic numbers
 		if (magic == 0xa1b23c4du) {
-			//swapped = 0;
+			swapped = 0;
 		} else if (magic == 0x4d3cb2a1u) {
-			//swapped = 1;
+			swapped = 1;
 		} else {
 			fprintf(stderr, "Error: unsupported PCAP magic number.\n");
 			fclose(fp);
@@ -109,4 +109,28 @@ int main(int argc, char **argv) {
 
 	}
 
+    	// Iterate packets
+	for (;;) {
+		pcap_rec_header_t rh;
+		if (read_fully(fp, &rh, sizeof(rh)) != 0) {
+			break; // EOF
+		}
+		uint32_t incl_len = swapped ? swap32(rh.incl_len) : rh.incl_len;
+		if (incl_len == 0) {
+			continue;
+		}
+		uint8_t *packet = (uint8_t *)malloc(incl_len);
+		if (!packet) {
+			fprintf(stderr, "Error: out of memory.\n");
+			fclose(fp);
+			return 1;
+		}
+		if (read_fully(fp, packet, incl_len) != 0) {
+			free(packet);
+			fprintf(stderr, "Error: truncated packet data.\n");
+			fclose(fp);
+			return 1;
+		}
+
+}
 }
