@@ -57,9 +57,9 @@ static int read_fully(FILE *fp, void *buf, size_t sz) {
 	return fread(buf, 1, sz, fp) == sz ? 0 : -1;
 }
 
-// static int is_printable_ascii(uint8_t c) {
-// 	return (c >= 32 && c <= 126) || c == '\n' || c == '\r' || c == '\t';
-// }
+static int is_printable_ascii(uint8_t c) {
+	return (c >= 32 && c <= 126) || c == '\n' || c == '\r' || c == '\t';
+}
 
 static inline uint32_t swap32(uint32_t v) {
 	return ((v & 0x000000FFu) << 24) | ((v & 0x0000FF00u) << 8) |
@@ -182,6 +182,35 @@ int main(int argc, char **argv) {
 		printf("Dst Port: %u\n", (unsigned)dst_port);
 		printf("Length: %u\n", (unsigned)udp_len);
 		printf("Checksum: 0x%04x\n", (unsigned)checksum);
+
+        // Payload
+		size_t udp_header_size = sizeof(udp_hdr_t);
+		size_t payload_offset = offset + udp_header_size;
+		size_t payload_file_len = (payload_offset <= incl_len) ? (incl_len - payload_offset) : 0;
+		size_t payload_len = 0;
+		if (udp_len >= udp_header_size) {
+			payload_len = udp_len - udp_header_size;
+		}
+		// Limit to what is present in the capture
+		if (payload_len > payload_file_len) {
+			payload_len = payload_file_len;
+		}
+
+		for (size_t i = 0; i < payload_len; i++) {
+			uint8_t c = packet[payload_offset + i];
+			if (is_printable_ascii(c) && c != '\n' && c != '\r') {
+				putchar((int)c);
+			} else {
+				putchar('.');
+			}
+		}
+		putchar('\n');
+		printf("==================================\n");
+
+		free(packet);
+	}
+    fclose(fp);
+	return 0;
  
 }
-}
+
