@@ -167,5 +167,21 @@ int main(int argc, char **argv) {
 		}
 		offset += ihl;
 
+       // Parse UDP
+		if (incl_len < offset + sizeof(udp_hdr_t)) {
+			free(packet);
+			continue;
+		}
+		udp_hdr_t *udp = (udp_hdr_t *)(packet + offset);
+		uint16_t src_port = ntohs(udp->src_port);
+		uint16_t dst_port = ntohs(udp->dst_port);
+		uint16_t udp_len = ntohs(udp->length);
+		uint16_t checksum = ntohs(udp->checksum);
+
+		printf("Src Port: %u\n", (unsigned)src_port);
+		printf("Dst Port: %u\n", (unsigned)dst_port);
+		printf("Length: %u\n", (unsigned)udp_len);
+		printf("Checksum: 0x%04x\n", (unsigned)checksum);
+ 
 }
 }
