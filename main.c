@@ -132,5 +132,23 @@ int main(int argc, char **argv) {
 			return 1;
 		}
 
+        // Parse Ethernet
+		if (incl_len < sizeof(eth_hdr_t)) {
+			free(packet);
+			continue;
+		}
+		eth_hdr_t *eth = (eth_hdr_t *)packet;
+		uint16_t ethertype = ntohs(eth->ethertype);
+		size_t offset = sizeof(eth_hdr_t);
+		if (ethertype == 0x8100 && incl_len >= offset + 4) {
+			// 802.1Q VLAN tag present: skip 4 bytes and read real ethertype
+			offset += 4;
+			ethertype = ntohs(*(uint16_t *)(packet + offset - 2));
+		}
+		if (ethertype != 0x0800) { // IPv4 only
+			free(packet);
+			continue;
+		}
+
 }
 }
