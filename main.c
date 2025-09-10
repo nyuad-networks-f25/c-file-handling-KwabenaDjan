@@ -150,5 +150,22 @@ int main(int argc, char **argv) {
 			continue;
 		}
 
+        // Parse IPv4
+		if (incl_len < offset + sizeof(ipv4_hdr_t)) {
+			free(packet);
+			continue;
+		}
+		ipv4_hdr_t *ip = (ipv4_hdr_t *)(packet + offset);
+		uint8_t ihl = (ip->ver_ihl & 0x0F) * 4;
+		if (incl_len < offset + ihl) {
+			free(packet);
+			continue;
+		}
+		if (ip->protocol != 17) { // UDP
+			free(packet);
+			continue;
+		}
+		offset += ihl;
+
 }
 }
