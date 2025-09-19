@@ -27,6 +27,7 @@ If not, how can I print a nice message to the user and exit?
 2. Install `inotify-tools` on your ubuntu machine. You can now use the loop
 `while true; do inotify-wait -e modify main.c; clear; make; done;`
 to run the make command automatically every `main.c` file changes.
+eeee
 
 ### Working with the file
 
